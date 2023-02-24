@@ -1,0 +1,49 @@
+/*
+ * Controls.cpp
+ *
+ * Created: 23/02/2023 11:06:48 am
+ * Author : hp
+ */ 
+
+#define F_CPU 1000000UL
+#include <avr/io.h>
+#include <util/delay.h>
+
+uint16_t CONTROL_ROM[1<<4] = {0x814 ,0x505, 0x901 ,0x900 ,0x440,0x008,0x902, 0x502,
+							//1000 00010100
+0x906,0x503, 0x904,0x780, 0x506, 0x824, 0x504 ,0x500};
+
+int main(void)
+{
+	// Some pins of PORTC can not be used for I/O directly.
+	// turn of JTAG to use them
+	// o write a 1 to the JTD bit twice consecutively to turn it off
+	MCUCSR = (1<<JTD);  MCUCSR = (1<<JTD);
+	//a1234 is opcode input from instructions
+	//
+	
+	DDRA = 0x10000111; // A[4:1] - Opcode Input//a0 is broken
+	
+	// Control Unit Bits : D[3:0]B[7:0]
+	// D[reg_dst[1], alu_src[1], mem_to_reg[1], reg_write[1]] B[mem_read[1], mem_write[1], branch[1], branch_neq[1], jump[1], alu_op[3]]
+	DDRB = 0xFF;
+	DDRD = 0xFF;
+	
+	uint8_t opcode = ~0;
+	
+	while (1)
+	{
+		if (opcode != (0x10000111 & PINA)) {
+			opcode = (0x10000111 & PINA);
+			PORTB = CONTROL_ROM[opcode];
+			PORTD = (CONTROL_ROM[opcode] >> 8);
+			_delay_ms(50);
+		}
+		//
+		//opcode=0;
+		//PORTB = CONTROL_ROM[opcode];
+		//PORTD = (CONTROL_ROM[opcode] >> 8);
+		
+	}
+}
+
